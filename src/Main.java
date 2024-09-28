@@ -1,4 +1,5 @@
 import java.util.Scanner;//импорт Scanner для обработки ввода
+import java.text.DecimalFormat; //импорт DecimalFormat для обработки вывода
 
 //класс комплексных чисел
 class ComplexNumbers {
@@ -10,7 +11,12 @@ class ComplexNumbers {
         this.re = 0;
         this.im = 0;
     }
-    //конструктор с параметрами
+    //конструктор с параметрами int для обработки целых значений, которые ввёл пользователь
+    public ComplexNumbers(int re_val, int im_val){
+        this.re = re_val;
+        this.im = im_val;
+    }
+    //конструктор с параметрами double для выполнения операций
     public ComplexNumbers(double re_val, double im_val){
         this.re = re_val;
         this.im = im_val;
@@ -71,19 +77,24 @@ class ComplexNumbers {
     //строковое представление комплексного числа для вывода
     public String toString(){
         StringBuilder str = new StringBuilder();
-        if (re!=0){
-            str.append(re);
+        //создание шаблона, который округляет дробные числа до трех цифр после запятой
+        DecimalFormat pattern = new DecimalFormat("#.###");
+        String new_re = pattern.format(re);
+        String new_im = pattern.format(im);
+        if(!(new_re.equals("0")) && !(new_re.equals("-0"))){ //добавление вещественной части, если она не равна нулю
+            str.append(new_re);
         }
-        if (im!=0){
-            if (im>0 && re!=0){
-                str.append("+").append(im).append("i");
+        if(!(new_im.equals("0")) && !(new_im.equals("-0"))){ //добавление мнимой части, если она не равна нулю
+            if(im > 0 && re!=0){
+                //со знаком "+", если она положительна, и до нее была вещественная часть
+                str.append("+").append(new_im).append("i");
             }
-            else{
-                str.append(im).append("i");
+            else{ //со знаком "-" в противном случае
+                str.append(new_im).append("i");
             }
         }
-        if(re==0 && im==0){
-            str.append("0");
+        if((new_im.equals("0") || new_im.equals("-0")) && (new_re.equals("0") || new_re.equals("-0"))){
+            str.append("0"); //если вещественная и мнимая части равны нулю, то просто добавляем "0"
         }
         return str.toString();
     }
@@ -252,19 +263,25 @@ class Matrix {
                 return null;
             }
             else {
-                Matrix trans = this.transposition(); //транспонирование матрицы
                 Matrix inverse_mat = new Matrix(rows, columns);
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < columns; j++) {
-                        //создание союзной матрицы - trans.minor(i, j).determinant()
-                        //и деление её элементов на детерминант - .division(det);
-                        if ((i + j) % 2 == 0) {
-                            //операция -(а+bi) к a+bi, находящимся на "нечетных" позициях
-                            ComplexNumbers value = trans.minor(i, j).determinant().division(det);
-                            inverse_mat.SetElement(i, j, value);
-                        } else {
-                            ComplexNumbers value = trans.minor(i, j).determinant().division(det).negative();
-                            inverse_mat.SetElement(i, j, value);
+                if(rows==1){ //если матрица состоит из одного числа a+bi, то обратная для нее 1/(a+bi)
+                    ComplexNumbers value = new ComplexNumbers(1,0).division(det);
+                    inverse_mat.SetElement(0,0, value);
+                }
+                else {
+                    Matrix trans = this.transposition(); //транспонирование матрицы
+                    for (int i = 0; i < rows; i++) {
+                        for (int j = 0; j < columns; j++) {
+                            //создание союзной матрицы - trans.minor(i, j).determinant()
+                            //и деление её элементов на детерминант - .division(det);
+                            if ((i + j) % 2 == 0) {
+                                //операция -(а+bi) к a+bi, находящимся на "нечетных" позициях
+                                ComplexNumbers value = trans.minor(i, j).determinant().division(det);
+                                inverse_mat.SetElement(i, j, value);
+                            } else {
+                                ComplexNumbers value = trans.minor(i, j).determinant().division(det).negative();
+                                inverse_mat.SetElement(i, j, value);
+                            }
                         }
                     }
                 }
@@ -273,13 +290,13 @@ class Matrix {
         }
     }
 
-    //заполнение матрицы комплексными числами
+    //заполнение матрицы комплексными числами с целыми вещественной и мнимой частями
     public void initialization(Scanner input){
         for (int i = 0; i< this.rows; i++){
             for (int j = 0; j< this.columns; j++){
                 System.out.print("["+i+"]["+j+"]: ");
-                double real = input.nextDouble();
-                double imaginary = input.nextDouble();
+                int real = input.nextInt();
+                int imaginary = input.nextInt();
                 this.SetElement(i,j, new ComplexNumbers(real, imaginary));
             }
         }
@@ -309,7 +326,7 @@ public class Main {
         int columns1 = input.nextInt();
         while(rows1<=0 || columns1<=0){
             //проверка на внесение только натуральных чисел
-            System.out.print("You can't use values less than or equal to zero. Try again: ");
+            System.out.print("You can only enter natural values. Try again: ");
             rows1 = input.nextInt();
             columns1 = input.nextInt();
         }
@@ -318,7 +335,7 @@ public class Main {
         int rows2 = input.nextInt();
         int columns2 = input.nextInt();
         while(rows2<=0 || columns2<=0){
-            System.out.print("You can't use values less than or equal to zero. Try again: ");
+            System.out.print("You can only enter natural values. Try again: ");
             rows2 = input.nextInt();
             columns2 = input.nextInt();
         }
